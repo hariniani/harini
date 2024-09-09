@@ -1,29 +1,76 @@
-def calculate_cgpa():
-    # Get the number of courses
-    num_courses = int(input("Enter the number of courses: "))
+from flask import Flask, request, render_template_string
 
-    # Initialize variables to store the total weighted grade points and total credit hours
-    total_weighted_grade_points = 0
-    total_credit_hours = 0
+app = Flask(__name__)
 
-    for i in range(num_courses):
-        # Get grade point and credit hours for each course
-        grade_point = float(input(f"Enter grade point for course {i + 1}: "))
-        credit_hours = float(input(f"Enter credit hours for course {i + 1}: "))
-        
-        # Update the totals
-        total_weighted_grade_points += grade_point * credit_hours
-        total_credit_hours += credit_hours
+# HTML template with form for CGPA calculation
+HTML_TEMPLATE = '''
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CGPA Calculator</title>
+</head>
+<body>
+    <h1>CGPA Calculator</h1>
+    <form method="post">
+        <fieldset>
+            <legend>Enter your grades and credits:</legend>
+            <div id="subjects">
+                <div class="subject">
+                    <label for="grade_1">Grade:</label>
+                    <input type="text" id="grade_1" name="grades" required>
+                    <label for="credits_1">Credits:</label>
+                    <input type="number" id="credits_1" name="credits" required>
+                </div>
+            </div>
+            <button type="button" onclick="addSubject()">Add More</button>
+            <button type="submit">Calculate CGPA</button>
+        </fieldset>
+    </form>
+    {% if cgpa is not none %}
+    <h2>CGPA: {{ cgpa }}</h2>
+    {% endif %}
+    <script>
+        let subjectCount = 1;
 
-    # Calculate CGPA
-    if total_credit_hours == 0:
-        print("Error: Total credit hours cannot be zero.")
-        return
-    
-    cgpa = total_weighted_grade_points / total_credit_hours
+        function addSubject() {
+            subjectCount++;
+            const subjectsDiv = document.getElementById('subjects');
+            const newSubjectDiv = document.createElement('div');
+            newSubjectDiv.className = 'subject';
+            newSubjectDiv.innerHTML = `
+                <label for="grade_${subjectCount}">Grade:</label>
+                <input type="text" id="grade_${subjectCount}" name="grades" required>
+                <label for="credits_${subjectCount}">Credits:</label>
+                <input type="number" id="credits_${subjectCount}" name="credits" required>
+            `;
+            subjectsDiv.appendChild(newSubjectDiv);
+        }
+    </script>
+</body>
+</html>
+'''
 
-    # Print the result
-    print(f"Your CGPA is: {cgpa:.2f}")
+def calculate_cgpa(grades, credits):
+    total_grade_points = sum(g * c for g, c in zip(grades, credits))
+    total_credits = sum(credits)
+    return total_grade_points / total_credits if total_credits > 0 else 0
 
-# Run the CGPA calculator
-calculate_cgpa()
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    cgpa = None
+    if request.method == 'POST':
+        grades = request.form.getlist('grades')
+        credits = request.form.getlist('credits')
+
+        # Convert inputs to floats
+        grades = [float(g) for g in grades]
+        credits = [float(c) for c in credits]
+
+        # Calculate CGPA
+        cgpa = calculate_cgpa(grades, credits)
+
+    return render_template_string(HTML_TEMPLATE, cgpa=cgpa)
+
+if __name__ == '__main__':
+    app.run(debug=True)
