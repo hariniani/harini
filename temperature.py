@@ -1,56 +1,52 @@
+from flask import Flask, request, render_template_string
+
+app = Flask(__name__)
+
+# HTML template with form for temperature conversion
+HTML_TEMPLATE = '''
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Temperature Converter</title>
+</head>
+<body>
+    <h1>Temperature Converter</h1>
+    <form method="post">
+        <label for="temperature">Temperature:</label>
+        <input type="text" id="temperature" name="temperature" required>
+        <select name="unit" id="unit">
+            <option value="celsius">Celsius to Fahrenheit</option>
+            <option value="fahrenheit">Fahrenheit to Celsius</option>
+        </select>
+        <button type="submit">Convert</button>
+    </form>
+    {% if result is not none %}
+    <h2>Result: {{ result }}</h2>
+    {% endif %}
+</body>
+</html>
+'''
+
 def celsius_to_fahrenheit(celsius):
     return (celsius * 9/5) + 32
 
 def fahrenheit_to_celsius(fahrenheit):
     return (fahrenheit - 32) * 5/9
 
-def celsius_to_kelvin(celsius):
-    return celsius + 273.15
-
-def kelvin_to_celsius(kelvin):
-    return kelvin - 273.15
-
-def fahrenheit_to_kelvin(fahrenheit):
-    return celsius_to_kelvin(fahrenheit_to_celsius(fahrenheit))
-
-def kelvin_to_fahrenheit(kelvin):
-    return celsius_to_fahrenheit(kelvin_to_celsius(kelvin))
-
-def temperature_converter():
-    print("Temperature Converter")
-    print("1. Celsius to Fahrenheit")
-    print("2. Fahrenheit to Celsius")
-    print("3. Celsius to Kelvin")
-    print("4. Kelvin to Celsius")
-    print("5. Fahrenheit to Kelvin")
-    print("6. Kelvin to Fahrenheit")
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    result = None
+    if request.method == 'POST':
+        temperature = float(request.form.get('temperature'))
+        unit = request.form.get('unit')
+        
+        if unit == 'celsius':
+            result = f'{temperature} Celsius is {celsius_to_fahrenheit(temperature):.2f} Fahrenheit'
+        elif unit == 'fahrenheit':
+            result = f'{temperature} Fahrenheit is {fahrenheit_to_celsius(temperature):.2f} Celsius'
     
-    choice = int(input("Choose an option (1-6): "))
+    return render_template_string(HTML_TEMPLATE, result=result)
 
-    if choice < 1 or choice > 6:
-        print("Invalid choice. Please select a number between 1 and 6.")
-        return
-
-    temperature = float(input("Enter the temperature value: "))
-
-    if choice == 1:
-        result = celsius_to_fahrenheit(temperature)
-        print(f"{temperature}°C is equal to {result:.2f}°F")
-    elif choice == 2:
-        result = fahrenheit_to_celsius(temperature)
-        print(f"{temperature}°F is equal to {result:.2f}°C")
-    elif choice == 3:
-        result = celsius_to_kelvin(temperature)
-        print(f"{temperature}°C is equal to {result:.2f}K")
-    elif choice == 4:
-        result = kelvin_to_celsius(temperature)
-        print(f"{temperature}K is equal to {result:.2f}°C")
-    elif choice == 5:
-        result = fahrenheit_to_kelvin(temperature)
-        print(f"{temperature}°F is equal to {result:.2f}K")
-    elif choice == 6:
-        result = kelvin_to_fahrenheit(temperature)
-        print(f"{temperature}K is equal to {result:.2f}°F")
-
-# Run the temperature converter
-temperature_converter()
+if __name__ == '__main__':
+    app.run(debug=True)
